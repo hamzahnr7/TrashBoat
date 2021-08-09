@@ -7,19 +7,19 @@
 #include "HX711.h"
 
 //---- setting load cell ----//
-//HX711 scale(9, 8); //(DT, SCK)//
+HX711 scale(9, 8); //(DT, SCK)//
        
 //---- setting apc220 ----//
 SoftwareSerial mySerial(2, 3); 
 
 //---- setting pin motor driver ----//
-// 3, relay panel, 4, relay Trash Boat, 5, Relay COnveyor
-int SolarCell = 2; // Charger Controller
-int Conveyor = 3; // Pin Relay buat ke Conveyor
+// 6, relay panel, 4, relay Trash Boat, 7, Relay Conveyor
+int SolarCell = 6; // Charger Controller
+int Conveyor = 7; // Pin Relay buat ke Conveyor
 int TrashBoat = 4; //Trash Boat
 int ML = 5; // Motor Kiri
 int MR = 6; // Motor Kanan
-int spd = 100;
+int spd = 255;
 //int IN_4 = 7;
 
 //---- setting oled ----//
@@ -67,6 +67,8 @@ void setup()
   pinMode(ML, OUTPUT);
   pinMode(MR, OUTPUT);
   pinMode(Conveyor, OUTPUT);
+  pinMode(TrashBoat, OUTPUT);
+  pinMode(SolarCell, OUTPUT);
 //  pinMode(IN_4, OUTPUT); 
 
   //---- setting sesnsor tegangan ----//
@@ -79,18 +81,18 @@ void setup()
   
   //---- kalibrasi loadcell jika diperlukan ----//
   
- // Serial.println("HX711 calibration sketch");
- // Serial.println("Remove all weight from scale");
- // Serial.println("After readings begin, place known weight on scale");
- // Serial.println("Press + or a to increase calibration factor");
- // Serial.println("Press - or z to decrease calibration factor");
+  Serial.println("HX711 calibration sketch");
+  Serial.println("Remove all weight from scale");
+  Serial.println("After readings begin, place known weight on scale");
+  Serial.println("Press + or a to increase calibration factor");
+  Serial.println("Press - or z to decrease calibration factor");
 
- // scale.set_scale();
- // scale.tare();  //Reset the scale to 0
+  scale.set_scale();
+  scale.tare();  //Reset the scale to 0
 
- // long zero_factor = scale.read_average(); //Get a baseline reading
-  //Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
-//  Serial.println(zero_factor);
+  long zero_factor = scale.read_average(); //Get a baseline reading
+  Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
+  Serial.println(zero_factor);
 
 }
 void loop(){   
@@ -149,16 +151,16 @@ void draw(void)
     mySerial.println(dataKirim); // Ngirim lewat APC   
 
     //---- load cell ----//
-    //scale.set_scale(calibration_factor); //Adjust to this calibration factor
-   // units = scale.get_units(), 1;
-   // if (units < 0)
+    scale.set_scale(calibration_factor); //Adjust to this calibration factor
+    units = scale.get_units(), 1;
+    if (units < 0)
     {
-   //   units = 0.00;
+      units = 0.00;
     }
-  //  Serial.println("Kapasitas Baterai: "+String(kapasitasBaterai));
-   // Serial.println("Unit Terbaca Load Cell: "+String(units));
+    Serial.println("Kapasitas Baterai: "+String(kapasitasBaterai));
+    Serial.println("Unit Terbaca Load Cell: "+String(units));
     
-  //  previousMillis = millis();
+    previousMillis = millis();
   }
   
   u8g.setPrintPos(50,52); 
@@ -184,9 +186,11 @@ void draw(void)
   }
   if(y>=1020 && x!=0){
     u8g.drawStr(80, 10, "BAWAH");
+    digitalWrite(Conveyor, HIGH);
   }
   if(x>=500 && x<=510 && y>=535 && y<=545){
     u8g.drawStr(80, 10, "STOP");
+    diam();
   }
   
   int coordinateX1 = map(x, 0, 1023, 2, 36);
@@ -218,6 +222,13 @@ void gerakKanan(){
 // Hanya Motor Kiri yang menyala
  analogWrite(ML, spd);
  delay(1000);  
+}
+
+void diam(){
+// Semua Motor Berhenti
+ analogWrite(MR, 0);
+ analogWrite(ML, 0);
+// delay(1000);  
 }
 
 String getValue(String data, char separator, int index)
