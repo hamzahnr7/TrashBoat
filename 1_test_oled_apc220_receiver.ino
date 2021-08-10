@@ -78,12 +78,10 @@ void setup()
 //  pinMode(IN_4, OUTPUT); 
 
   //---- setting sesnsor tegangan ----//
-  pinMode(arusPin1, INPUT);
-  pinMode(arusPin2, INPUT);
-  pinMode(arusPin3, INPUT);
-  pinMode(voltPin1, INPUT);
-  pinMode(voltPin2, INPUT);
-  pinMode(voltPin3, INPUT);
+  for (int i = 0; i < 3; i++){
+    pinMode(arusPin[i], INPUT);  
+    pinMode(voltPin[i], INPUT);
+  }
   
   //---- kalibrasi loadcell jika diperlukan ----//
   
