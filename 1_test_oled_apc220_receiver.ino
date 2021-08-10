@@ -25,19 +25,25 @@ int spd = 255;
 //---- setting oled ----//
 U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NO_ACK); 
 
+//---- setting sensor arus -----//
+int arusPin[3] = {A0, A1, A2}; // A0 untuk Panel Surya, A1 untuk Arduino, A2 untuk Trash Boat
+//int arusPin2 = A1; 
+//int arusPin3 = A2;
+float hasilSensorArus[3] = {0.0, 0.0, 0.0};
+float nilaiSensorArus[3] = {0.0, 0.0, 0.0};
+
 //---- setting sensor tegangan ----//
-int arusPin1 = A0; // pin arduino yang terhubung dengan pin S modul sensor tegangan
-int arusPin2 = A1;
-int arusPin3 = A2;
-int voltPin1 = A3;
-int voltPin2 = A4;
-int voltPin3 = A5;
+int voltPin[3] = {A3, A4, A5}; // A3 untuk Panel Surya, A4 untuk Baterai Utama, A5 untuk Baterai Cadangan
+//int voltPin2 = A4;
+//int voltPin3 = A5;
+int avgValue = 500;
  
-float Vmodul = 0.0; 
-float hasilSensorTegangan = 0.0;
+float Vmodul[3] = {0.0, 0.0, 0.0}; 
+float hasilSensorTegangan[3] = {0.0, 0.0, 0.0};
+float vcc = 4.7; // VCC pada Arduino hasur dikalibrasi ulang
 float R1 = 30000.0; //30k
 float R2 = 7500.0; //7500 ohm resistor, 
-int nilaiSensorTegangan = 0;
+float nilaiSensorTegangan[3] = {0.0, 0.0, 0.0};
 
 //----setting timer ----//
 unsigned long interval=1000;
@@ -138,13 +144,30 @@ void draw(void)
       } 
       
     }
+    
+    //---- Nilai Sensor Arus ----//
+    for (int i = 0; i < avgValue; i++){
+      hasilSensorArus[0] += analogRead(arusPin[0]);
+      hasilSensorArus[1] += analogRead(arusPin[1]);
+      hasilSensorArus[2] += analogRead(arusPin[2]);
+      delay(1);
+    }
+
+    for (int i = 0; i < 3; i++){
+      hasilSensorArus[i] /= avgValue;
+      float voltIn = hasilSensorArus[i] * 5.0 / 1024.0; // 5.0 bisa diganti var vcc
+      nilaiSensorArus[i] = (voltIn - 2.5) / 0.066;
+    }
 
     //---- kapasitas baterai ----//
-    nilaiSensorTegangan = analogRead(analogPin);
-    Vmodul = (nilaiSensorTegangan * 5.0) / 1024.0;
-    hasilSensorTegangan = Vmodul / (R2/(R1+R2));
+    for(int i = 0; i < 3; i++){
+      nilaiSensorTegangan[i] = analogRead(voltPin[i]);      
+      Vmodul[i] = (nilaiSensorTegangan[i] * vcc) / 1024.0;
+      hasilSensorTegangan[i] = Vmodul[i] / (R2/(R1+R2));
+    }
     
-    int kapasitasBaterai = hasilSensorTegangan/random(30, 90);
+//    int kapasitasBaterai = hasilSensorTegangan[1]/random(30, 90);
+    int kapasitasBaterai = hasilSensorTegangan[1];
     String dataKirim = "2*"+String(kapasitasBaterai); 
     textBaterai = "Batt = "+String(kapasitasBaterai)+"%";   
     dataKirim.trim();
